@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Pennsylvania NEXRAD Beam Height & Precipitation Coverage Analysis — jns182wx">
+<title>PA NEXRAD Radar Coverage Research — jns182wx</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --bg:    #04070e;
+  --surf:  #080d18;
+  --card:  #0b1122;
+  --bord:  #162030;
+  --acc:   #00d4ff;
+  --acc2:  #4ade80;
+  --text:  #b8d0e4;
+  --dim:   #2a3f52;
+  --KCCX:  #3b9eff;
+  --KLWX:  #fb923c;
+  --KDIX:  #4ade80;
+  --KBGM:  #facc15;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'IBM Plex Sans', sans-serif;
+  line-height: 1.5;
+}
+
+/* ── HEADER ── */
+header {
+  background: linear-gradient(150deg, #04070e 0%, #081828 60%, #04070e 100%);
+  border-bottom: 1px solid var(--bord);
+  padding: 0 0 0 0;
+  position: relative;
+  overflow: hidden;
+}
+header::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--acc), transparent);
+}
+.header-grid {
+  background: repeating-linear-gradient(90deg,transparent,transparent 80px,rgba(0,212,255,0.02) 80px,rgba(0,212,255,0.02) 81px),
+              repeating-linear-gradient(0deg,transparent,transparent 80px,rgba(0,212,255,0.02) 80px,rgba(0,212,255,0.02) 81px);
+  padding: 48px 40px 36px;
+  max-width: 1300px; margin: 0 auto;
+}
+.site-eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px; letter-spacing: 4px;
+  color: var(--acc); text-transform: uppercase;
+  margin-bottom: 14px;
+}
+header h1 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(36px, 6vw, 80px);
+  color: #fff; line-height: 0.95;
+  letter-spacing: 2px; margin-bottom: 6px;
+}
+header h1 span { color: var(--acc); }
+.site-subtitle {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px; color: var(--acc);
+  letter-spacing: 2px; margin-bottom: 24px;
+}
+.site-desc {
+  font-size: 15px; color: #7a9ab0;
+  max-width: 680px; line-height: 1.7;
+  margin-bottom: 28px;
+}
+.header-stats {
+  display: flex; flex-wrap: wrap; gap: 28px;
+}
+.hs { display: flex; flex-direction: column; gap: 3px; }
+.hs-v {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 32px; color: var(--acc); line-height: 1;
+}
+.hs-l {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 8px; color: var(--dim);
+  text-transform: uppercase; letter-spacing: 2px;
+}
+
+/* ── NAV ── */
+nav {
+  background: var(--surf);
+  border-bottom: 1px solid var(--bord);
+  padding: 0 40px;
+  display: flex; gap: 0;
+  overflow-x: auto;
+}
+.nav-link {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--dim); text-decoration: none;
+  padding: 14px 20px;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.nav-link:hover { color: var(--acc); border-bottom-color: var(--acc); }
+
+/* ── PAGE ── */
+.page { max-width: 1300px; margin: 0 auto; padding: 40px 40px; }
+
+/* ── SECTION ── */
+.section { margin-bottom: 56px; }
+.section-header {
+  display: flex; align-items: baseline; gap: 14px;
+  margin-bottom: 8px;
+}
+.section-icon { font-size: 22px; }
+.section-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 30px; letter-spacing: 2px; color: #fff;
+}
+.section-desc {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--dim);
+  margin-bottom: 20px; line-height: 1.7;
+}
+.section-divider {
+  height: 1px; background: var(--bord);
+  margin-bottom: 20px;
+  background: linear-gradient(90deg, var(--acc)44, var(--bord), transparent);
+}
+
+/* ── PAGE CARDS ── */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+.page-card {
+  background: var(--card);
+  border: 1px solid var(--bord);
+  border-radius: 6px;
+  text-decoration: none;
+  display: flex; flex-direction: column;
+  transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+  overflow: hidden;
+  position: relative;
+}
+.page-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--acc), transparent);
+  opacity: 0; transition: opacity 0.2s;
+}
+.page-card:hover {
+  border-color: var(--acc);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0, 212, 255, 0.08);
+}
+.page-card:hover::before { opacity: 1; }
+.card-body { padding: 18px 18px 14px; flex: 1; }
+.card-title {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 14px; font-weight: 600;
+  color: #e0eef8; margin-bottom: 8px;
+  line-height: 1.3;
+}
+.card-desc {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px; color: var(--dim);
+  line-height: 1.8;
+}
+.card-foot {
+  padding: 10px 18px;
+  background: rgba(0,212,255,0.03);
+  border-top: 1px solid var(--bord);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px; color: var(--acc);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.card-arrow { font-size: 12px; }
+
+/* Storm card variants */
+.card-storm { border-left: 3px solid; }
+.card-jan25 { border-left-color: #38bdf8; }
+.card-mar11 { border-left-color: #4ade80; }
+.card-mar06 { border-left-color: #fb923c; }
+.card-mar27 { border-left-color: #a78bfa; }
+.card-feb20 { border-left-color: #f87171; }
+
+/* ── DATA FILES ── */
+.files-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 10px;
+}
+.file-card {
+  background: var(--card);
+  border: 1px solid var(--bord);
+  border-radius: 5px;
+  padding: 14px 16px;
+  display: flex; align-items: center; gap: 14px;
+  text-decoration: none;
+  transition: border-color 0.2s;
+}
+.file-card:hover { border-color: var(--acc2); }
+.file-icon {
+  font-size: 22px; flex-shrink: 0;
+  width: 36px; text-align: center;
+}
+.file-info { flex: 1; min-width: 0; }
+.file-title {
+  font-size: 13px; font-weight: 600;
+  color: #e0eef8; margin-bottom: 3px;
+}
+.file-desc {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px; color: var(--dim);
+  line-height: 1.6;
+}
+.file-size {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px; color: var(--acc2);
+  flex-shrink: 0;
+}
+
+/* ── METHOD NOTE ── */
+.method-box {
+  background: linear-gradient(135deg, #061525, #040c18);
+  border: 1px solid #1a3050;
+  border-left: 3px solid var(--acc);
+  border-radius: 5px;
+  padding: 20px 24px;
+  margin-bottom: 40px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 20px; align-items: start;
+}
+.method-icon { font-size: 28px; margin-top: 2px; }
+.method-box h3 {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px; letter-spacing: 3px;
+  color: var(--acc); text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.method-box p {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: #4a7090;
+  line-height: 1.9;
+}
+.method-box strong { color: #6a90a8; }
+
+/* ── RADAR LEGEND ── */
+.radar-chips {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin-top: 20px;
+}
+.rchip {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px; padding: 4px 12px;
+  border-radius: 3px; border: 1px solid;
+  letter-spacing: 1px; font-weight: 600;
+}
+
+/* ── FOOTER ── */
+footer {
+  background: var(--surf);
+  border-top: 1px solid var(--bord);
+  padding: 28px 40px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px; color: var(--dim);
+  line-height: 2.2;
+}
+footer a { color: var(--acc); text-decoration: none; }
+.footer-grid {
+  max-width: 1300px; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 32px;
+}
+.footer-col h4 {
+  font-size: 9px; letter-spacing: 2px;
+  color: #3a5060; text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+@media (max-width: 700px) {
+  .header-grid { padding: 32px 20px 24px; }
+  .page { padding: 24px 20px; }
+  nav { padding: 0 20px; }
+  .footer-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-grid">
+    <div class="site-eyebrow">jns182wx · Camp Hill, PA · 35 Years of Observational Experience</div>
+    <h1>PA NEXRAD<br><span>Radar Coverage</span><br>Research</h1>
+    <div class="site-subtitle">South-Central Pennsylvania · Beam Geometry & Precipitation Analysis · 2026</div>
+    <p class="site-desc">
+      How much of the precipitation falling over south-central Pennsylvania does NEXRAD actually see?
+      This research quantifies radar beam height geometry across 10 ASOS stations and 4 WSR-88D sites,
+      using corrected hourly precipitation totals, upper air soundings from IEM, and RAP BUFKIT model data
+      to characterize what the atmosphere is doing when radar captures — or misses — each event.
+    </p>
+    <div class="header-stats">
+      <div class="hs"><div class="hs-v">10</div><div class="hs-l">ASOS Stations</div></div>
+      <div class="hs"><div class="hs-v">4</div><div class="hs-l">WSR-88D Radars</div></div>
+      <div class="hs"><div class="hs-v">94</div><div class="hs-l">Days Analyzed</div></div>
+      <div class="hs"><div class="hs-v">368</div><div class="hs-l">Soundings Pulled</div></div>
+      <div class="hs"><div class="hs-v">5</div><div class="hs-l">Storm Deep Dives</div></div>
+      <div class="hs"><div class="hs-v">3,014</div><div class="hs-l">Hourly Precip Obs</div></div>
+    </div>
+    <div class="radar-chips">
+      <div class="rchip" style="color:#3b9eff;border-color:#3b9eff">KCCX · State College PA · 2,486ft MSL</div>
+      <div class="rchip" style="color:#fb923c;border-color:#fb923c">KLWX · Sterling VA · 282ft MSL</div>
+      <div class="rchip" style="color:#4ade80;border-color:#4ade80">KDIX · Mt Holly NJ · 149ft MSL</div>
+      <div class="rchip" style="color:#facc15;border-color:#facc15">KBGM · Binghamton NY · 1,606ft MSL</div>
+    </div>
+  </div>
+</header>
+
+<nav>
+  <a class="nav-link" href="#coverage">Coverage Analysis</a>
+  <a class="nav-link" href="#analysis">Precip Analysis</a>
+  <a class="nav-link" href="#storms">Storm Deep Dives</a>
+  <a class="nav-link" href="#data">Data Downloads</a>
+  <a class="nav-link" href="#method">Methodology</a>
+</nav>
+
+<div class="page">
+
+  <!-- ── COVERAGE ── -->
+  <div class="section" id="coverage">
+    <div class="section-header">
+      <span class="section-icon">📡</span>
+      <span class="section-title">Coverage Analysis</span>
+    </div>
+    <p class="section-desc">Beam geometry across PA — which radar sees each location lowest, and how high is it looking?</p>
+    <div class="section-divider"></div>
+    <div class="cards-grid">
+      <a class="page-card" href="pa_radar_map.html">
+        <div class="card-body">
+          <div class="card-title">PA NEXRAD Coverage Map</div>
+          <div class="card-desc">All 67 PA counties colored by best radar (lowest 0.5° beam). Full regional map with KCCX, KLWX, KDIX, KBGM, KBUF coverage radius circles. Neighboring states included.</div>
+        </div>
+        <div class="card-foot"><span>Interactive SVG map</span><span class="card-arrow">→</span></div>
+      </a>
+      <a class="page-card" href="pa_radar_coverage.html">
+        <div class="card-body">
+          <div class="card-title">County Coverage Dashboard</div>
+          <div class="card-desc">Interactive table and map: 0.5° beam centerline heights for every PA county from all 8 radar sites. Hover any county for full breakdown. Color-coded by dominant radar.</div>
+        </div>
+        <div class="card-foot"><span>67 counties · 8 radars</span><span class="card-arrow">→</span></div>
+      </a>
+      <a class="page-card" href="pa_towns_radar.html">
+        <div class="card-body">
+          <div class="card-title">South-Central PA Town Reference</div>
+          <div class="card-desc">26 towns from Carlisle to Oxford, Waynesboro to Tamaqua. Beam heights from top 5 radars at 0.5°/1.2°/2.4° tilts. Zoomed regional map with town markers.</div>
+        </div>
+        <div class="card-foot"><span>26 towns · 5 radars · 3 tilts</span><span class="card-arrow">→</span></div>
+      </a>
+      <a class="page-card" href="beam_height_table.html">
+        <div class="card-body">
+          <div class="card-title">ASOS Station Beam Reference</div>
+          <div class="card-desc">All 10 ASOS stations with exact coordinates and elevations. Beam centerline height for 0.5°/0.8°/1.2°/1.7° tilts from KCCX, KLWX, KDIX, and KBGM. Best radar highlighted per station.</div>
+        </div>
+        <div class="card-foot"><span>10 stations · 4 radars · 4 tilts</span><span class="card-arrow">→</span></div>
+      </a>
+    </div>
+  </div>
+
+  <!-- ── ANALYSIS ── -->
+  <div class="section" id="analysis">
+    <div class="section-header">
+      <span class="section-icon">🌧</span>
+      <span class="section-title">Precipitation Analysis</span>
+    </div>
+    <p class="section-desc">Jan 1 – Apr 4, 2026: corrected hourly totals, sounding thermodynamics, beam classification.</p>
+    <div class="section-divider"></div>
+    <div class="cards-grid">
+      <a class="page-card" href="radar_precip_v3.html" style="grid-column: 1 / -1; max-width: 680px;">
+        <div class="card-body">
+          <div class="card-title">Beam vs. Precipitation — Interactive Infographic</div>
+          <div class="card-desc">
+            10 ASOS stations · 3,014 corrected hourly observations · Jan 1–Apr 4, 2026<br><br>
+            For each precip hour: METAR cloud base classified against beam height (definite miss / beam in cloud / no ceiling).
+            IAD + OKX balloon soundings from IEM merged to add freezing level, precipitable water, 0–3km lapse rate,
+            and cloud phase at beam height. Interactive station cards, daily timeline, cloud base scatter plot,
+            and full data table.
+          </div>
+        </div>
+        <div class="card-foot"><span>Click station cards to switch · Orange line = warm-phase fraction</span><span class="card-arrow">→</span></div>
+      </a>
+    </div>
+  </div>
+
+  <!-- ── STORMS ── -->
+  <div class="section" id="storms">
+    <div class="section-header">
+      <span class="section-icon">⛈</span>
+      <span class="section-title">Storm Deep Dives</span>
+    </div>
+    <p class="section-desc">Five events dissected with hourly RAP BUFKIT soundings — cross-sections, hodographs, raindrop trajectories, and 10-station ensemble thermodynamics.</p>
+    <div class="section-divider"></div>
+    <div class="cards-grid">
+      <a class="page-card card-storm card-jan25" href="storm_jan25.html">
+        <div class="card-body">
+          <div class="card-title" style="color:#38bdf8">January 25 — Major Warm Frontal Event</div>
+          <div class="card-desc">MDT: 1.49" · 105kt bulk shear · No freezing level (all warm phase) · Raindrop drifts 3.6mi SSE · Deep moisture column, dry air above 40k ft.</div>
+        </div>
+        <div class="card-foot" style="color:#38bdf8"><span>Cross-section · Hodograph · Ensemble</span><span class="card-arrow">→</span></div>
+      </a>
+      <a class="page-card card-storm card-mar11" href="storm_mar11.html">
+        <div class="card-body">
+          <div class="card-title" style="color:#4ade80">March 11 — Significant Frontal System</div>
+          <div class="card-desc">MDT: 1.34" · Freeze level 11,687ft · Embedded TS · 52kt shear · 4.5mi drift SW · Beam just above freezing level — possible bright band.</div>
+        </div>
+        <div class="card-foot" style="color:#4ade80"><span>Cross-section · Hodograph · Ensemble</span><span class="card-arrow">→</span></div>
+      </a>
+      <a class="page-card card-storm card-mar06" href="storm_mar06.html">
+        <div class="card-body">
+          <div class="card-title" style="color:#fb923c">March 6 — Moderate Frontal Passage</div>
+          <div class="card-desc">MDT: 0.79" · Freeze level 10,061ft · 56kt shear · SSW storm tilt · 3.95mi drift SSW · Mid-level dry air above storm.</div>
+        </div>
+        <div class="card-foot" style="color:#fb923c"><span>Cross-section · Hodograph · Ensemble</span><span class="card-arrow">→</span></div>
+      </a>
+      <a class="page-card card-storm card-mar27" href="storm_mar27.html">
+        <div class="card-body">
+          <div class="card-title" style="color:#a78bfa">March 27 — Mixed Precipitation Event</div>
+          <div class="card-desc">MDT: 0.57" · Freeze level 11,165ft · 53kt shear · 6.6mi drift WSW — longest trajectory of the five events · CAPE near zero.</div>
+        </div>
+        <div class="card-foot" style="color:#a78bfa"><span>Cross-section · Hodograph · Ensemble</span><span class="card-arrow">→</span></div>
+      </a>
+      <a class="page-card card-storm card-feb20" href="storm_feb20.html">
+        <div class="card-body">
+          <div class="card-title" style="color:#f87171">February 20 — Cold Air Damming Event</div>
+          <div class="card-desc">MDT: 0.80" · Freeze level 8,209ft — within 300ft of beam height · Classic CAD signature · 91kt shear · 2.6mi drift SSE · Bright band zone alignment.</div>
+        </div>
+        <div class="card-foot" style="color:#f87171"><span>Cross-section · Hodograph · Ensemble</span><span class="card-arrow">→</span></div>
+      </a>
+    </div>
+  </div>
+
+  <!-- ── DATA ── -->
+  <div class="section" id="data">
+    <div class="section-header">
+      <span class="section-icon">📥</span>
+      <span class="section-title">Data Downloads</span>
+    </div>
+    <p class="section-desc">All source data used in this research — open for your own analysis.</p>
+    <div class="section-divider"></div>
+    <div class="files-grid">
+      <a class="file-card" href="data/rap_sample.csv" download>
+        <div class="file-icon">📊</div>
+        <div class="file-info">
+          <div class="file-title">RAP Sample (CSV)</div>
+          <div class="file-desc">203-row stratified sample · Full RAP sounding thermodynamics at beam height per obs · Freeze level, PW, CAPE, lapse rate, phase, trajectory</div>
+        </div>
+        <div class="file-size">33 KB</div>
+      </a>
+      <a class="file-card" href="data/precip_thermo.csv" download>
+        <div class="file-icon">🌧</div>
+        <div class="file-info">
+          <div class="file-title">Precip + Thermo (CSV)</div>
+          <div class="file-desc">3,014 corrected hourly obs · Jan 1–Apr 4 · Merged with IAD/OKX sounding thermodynamics · Beam classification per obs</div>
+        </div>
+        <div class="file-size">355 KB</div>
+      </a>
+      <a class="file-card" href="data/soundings_summary.csv" download>
+        <div class="file-icon">🎈</div>
+        <div class="file-info">
+          <div class="file-title">Sounding Summary (CSV)</div>
+          <div class="file-desc">368 launches · IAD + OKX · 00Z &amp; 12Z · Jan 1–Apr 4 · Freeze level AGL, PW, surface temp/dewpoint per launch</div>
+        </div>
+        <div class="file-size">26 KB</div>
+      </a>
+      <a class="file-card" href="data/soundings_levels.csv" download>
+        <div class="file-icon">📈</div>
+        <div class="file-info">
+          <div class="file-title">Sounding Levels (CSV)</div>
+          <div class="file-desc">58,419 pressure levels · Full vertical profiles for all 368 soundings · pres, hght, tmpc, dwpc, drct, sknt per level</div>
+        </div>
+        <div class="file-size">4.6 MB</div>
+      </a>
+      <a class="file-card" href="data/rap_sample_export.json" download>
+        <div class="file-icon">{ }</div>
+        <div class="file-info">
+          <div class="file-title">RAP Sample (JSON)</div>
+          <div class="file-desc">Same 203 obs as CSV · JSON format · All fields preserved</div>
+        </div>
+        <div class="file-size">126 KB</div>
+      </a>
+      <a class="file-card" href="data/soundings_raw_export.json" download>
+        <div class="file-icon">{ }</div>
+        <div class="file-info">
+          <div class="file-title">Soundings Raw (JSON)</div>
+          <div class="file-desc">Complete IEM RAOB profiles · All 368 sounding launches · Original API structure preserved</div>
+        </div>
+        <div class="file-size">5.2 MB</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- ── METHOD ── -->
+  <div class="section" id="method">
+    <div class="section-header">
+      <span class="section-icon">⚗️</span>
+      <span class="section-title">Methodology</span>
+    </div>
+    <div class="section-divider"></div>
+    <div class="method-box">
+      <div class="method-icon">📐</div>
+      <div>
+        <h3>Beam Height Formula</h3>
+        <p>
+          Standard WSR-88D 4/3 Earth-radius model: <strong>h = √(r² + (kRe)² + 2r·kRe·sinθ) − kRe</strong>
+          where k=4/3, Re=6371km, θ=elevation angle. Result is beam <strong>centerline height AGL above station elevation</strong>.
+          Best radar per station selected by minimum 0.5° beam AGL across KCCX, KLWX, KDIX, and KBGM.
+          Site elevations: KCCX 2,486ft · KLWX 282ft · KDIX 149ft · KBGM 1,606ft MSL.
+        </p>
+      </div>
+    </div>
+    <div class="method-box">
+      <div class="method-icon">🌧</div>
+      <div>
+        <h3>Precipitation Correction — Critical Note</h3>
+        <p>
+          ASOS <strong>p01i</strong> (IEM field) is a <strong>running cumulative total since the last routine (:56) observation</strong>,
+          mirroring the METAR P#### remark. Sub-hourly SPECI observations carry increasing cumulative values —
+          raw summation of all obs within an hour would double- or triple-count precipitation.
+          <strong>Correct method: MAX(p01i) within each clock hour</strong> = true hourly total.
+          All totals on this site use this correction. Raw sums were 1.5–2.5× the correct values.
+        </p>
+      </div>
+    </div>
+    <div class="method-box">
+      <div class="method-icon">🎈</div>
+      <div>
+        <h3>Sounding Data</h3>
+        <p>
+          Upper air soundings pulled from <strong>IEM Iowa State University RAOB API</strong> for IAD (Dulles) and OKX (Upton NY)
+          at 00Z and 12Z, Jan 1–Apr 4, 2026 — 368 total launches. Each precip observation is assigned the
+          nearest sounding in time from the closer site. RAP BUFKIT model soundings pulled from
+          <strong>IEM mtarchive</strong> for all 10 station surrogate sites for the 5 storm deep-dive events —
+          hourly resolution from 00Z and 12Z RAP runs covering each event window.
+          Thermodynamics interpolated to beam height using linear pressure-level interpolation.
+        </p>
+      </div>
+    </div>
+    <div class="method-box">
+      <div class="method-icon">💧</div>
+      <div>
+        <h3>Raindrop Trajectory</h3>
+        <p>
+          For each storm event, raindrop drift is computed by integrating wind velocity from the RAP sounding
+          profile between beam height and surface, assuming a <strong>terminal fall velocity of 7 m/s</strong>
+          (representative of 2mm moderate rain drops). Each atmospheric layer contributes horizontal drift
+          proportional to fall time through that layer. Result expressed as distance (miles) and compass bearing
+          from the radar sampling point to the estimated surface impact location.
+          <strong>Note: this is beam-centerline to surface, not storm-relative.</strong>
+        </p>
+      </div>
+    </div>
+    <div class="method-box">
+      <div class="method-icon">⚠️</div>
+      <div>
+        <h3>What We Don't Know</h3>
+        <p>
+          METAR reports cloud <strong>base only</strong> — not cloud top. When the beam is above the cloud base,
+          it may be inside the cloud, or it may be above the cloud entirely. Without GOES-16 cloud top data
+          or coincident PIREP reports, we cannot distinguish these cases from surface obs alone.
+          Classification of <strong>"beam in cloud"</strong> is therefore <em>necessary but not sufficient</em>
+          for radar detection — it means the beam <em>could</em> be sampling precipitating cloud,
+          not that it <em>is</em>. The only firm conclusion is <strong>"definite miss"</strong>:
+          when the beam is below the cloud base, it is unambiguously sampling clear air.
+        </p>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<footer>
+  <div class="footer-grid">
+    <div class="footer-col">
+      <h4>Research</h4>
+      Jonathan · jns182wx · Camp Hill, PA<br>
+      35 years observational experience<br>
+      Independent climate researcher<br>
+      Ecowitt GW3000B · Station JNS182WX<br>
+      <a href="https://jns182wx.github.io">jns182wx.github.io</a>
+    </div>
+    <div class="footer-col">
+      <h4>Data Sources</h4>
+      ASOS: <a href="https://mesonet.agron.iastate.edu">IEM Iowa State</a><br>
+      Soundings: IEM RAOB API · IAD + OKX<br>
+      RAP BUFKIT: IEM mtarchive<br>
+      County geometry: US Census Bureau TIGER<br>
+      Beam formula: NOAA WSR-88D ROC documentation
+    </div>
+    <div class="footer-col">
+      <h4>Pages</h4>
+      <a href="pa_radar_map.html">PA Coverage Map</a><br>
+      <a href="pa_radar_coverage.html">County Dashboard</a><br>
+      <a href="pa_towns_radar.html">Town Reference</a><br>
+      <a href="beam_height_table.html">ASOS Beam Table</a><br>
+      <a href="radar_precip_v3.html">Precip Infographic</a><br>
+      <a href="storm_jan25.html">Jan 25 Storm</a> ·
+      <a href="storm_mar11.html">Mar 11</a> ·
+      <a href="storm_mar06.html">Mar 6</a> ·
+      <a href="storm_mar27.html">Mar 27</a> ·
+      <a href="storm_feb20.html">Feb 20</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ASOS Station Beam Height Reference — South-Central PA</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap');
+
+:root {
+  --bg:#04070e; --surf:#080d18; --card:#0b1122; --bord:#162030;
+  --text:#b8d0e4; --dim:#243040; --acc:#00d4ff;
+  --KCCX:#3b9eff; --KLWX:#fb923c; --KDIX:#4ade80; --KBGM:#facc15;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Barlow Condensed',sans-serif;min-height:100vh;}
+
+/* HEADER */
+header{
+  padding:28px 28px 20px;
+  background:linear-gradient(150deg,#04070e,#081525);
+  border-bottom:1px solid var(--bord);
+  position:relative; overflow:hidden;
+}
+header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--acc),transparent);}
+.eyebrow{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--acc);margin-bottom:10px;}
+header h1{font-size:clamp(18px,2.5vw,32px);font-weight:700;color:#fff;margin-bottom:6px;}
+header p{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);line-height:1.8;}
+
+/* LEGEND + CONTROLS */
+.toolbar{
+  display:flex;flex-wrap:wrap;align-items:center;gap:16px;
+  padding:10px 28px;background:var(--surf);border-bottom:1px solid var(--bord);
+}
+.leg-title{font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:2px;color:var(--dim);}
+.leg{display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
+.li{display:flex;align-items:center;gap:5px;font-family:'Share Tech Mono',monospace;font-size:9px;}
+.lsw{width:12px;height:8px;border-radius:1px;}
+.radar-legend{display:flex;flex-wrap:wrap;gap:10px;margin-left:auto;}
+.rchip{font-family:'Share Tech Mono',monospace;font-size:9px;padding:2px 8px;border-radius:2px;border:1px solid;letter-spacing:1px;font-weight:600;}
+
+/* TABLE WRAP */
+.tbl-outer{padding:20px 28px;overflow-x:auto;}
+.tbl-wrap{
+  border:1px solid var(--bord);border-radius:6px;overflow:hidden;
+  box-shadow:0 0 40px rgba(0,212,255,0.04);
+}
+
+table{
+  width:100%;border-collapse:collapse;
+  font-family:'Share Tech Mono',monospace;font-size:11px;
+  white-space:nowrap;
+}
+
+/* HEADER ROWS */
+.header-r1 th, .header-r2 th, .header-r3 th{
+  padding:0;border:1px solid var(--bord);text-align:center;
+  position:sticky;top:0;z-index:10;
+}
+.th-sid,.th-name,.th-coord,.th-elev{
+  background:#060c18;color:var(--acc);padding:8px 10px;
+  font-size:9px;letter-spacing:1px;text-transform:uppercase;
+  top:0;z-index:12;
+}
+.th-name{text-align:left;min-width:160px;}
+.th-radar{
+  padding:8px 12px;font-size:11px;letter-spacing:2px;
+  text-transform:uppercase;font-weight:700;text-align:center;
+}
+.radar-loc{display:block;font-size:8px;font-weight:400;letter-spacing:1px;opacity:0.7;margin-top:2px;}
+.th-dist,.th-tilt{
+  background:#060c18;padding:6px 8px;
+  font-size:8px;letter-spacing:1px;
+}
+.th-unit{background:#060c18;color:var(--dim);padding:4px 8px;font-size:8px;}
+
+/* DATA ROWS */
+.data-row:nth-child(even){background:rgba(255,255,255,0.015);}
+.data-row:hover td{background:rgba(0,212,255,0.04)!important;}
+td{padding:7px 10px;border:1px solid rgba(255,255,255,0.04);vertical-align:middle;text-align:center;}
+.td-sid{font-weight:700;font-size:13px;color:#daeaf8;text-align:center;letter-spacing:1px;}
+.td-name{text-align:left;color:var(--text);font-size:10px;padding-left:12px;}
+.td-coord{color:var(--dim);font-size:10px;}
+.td-elev{color:#7a9ab0;}
+.td-dist{color:var(--dim);font-size:10px;}
+
+/* Height color scale */
+.h0{color:#00ff88;font-weight:700;}
+.h1{color:#7fff00;font-weight:600;}
+.h2{color:#ffd700;}
+.h3{color:#ff8c00;}
+.h4{color:#ff4444;}
+.h5{color:#aa2222;}
+
+/* Best radar highlighting */
+.td-best{position:relative;}
+.td-best-dist{font-weight:700!important;}
+
+/* Bold best 0.5° cell with left border */
+tr td.td-best:first-of-type{border-left:2px solid transparent;}
+
+footer{
+  border-top:1px solid var(--bord);padding:14px 28px;
+  font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--dim);line-height:2;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">jns182wx.github.io · NEXRAD Beam Reference · South-Central PA · 10 ASOS Stations</div>
+  <h1>ASOS Station Beam Height Reference Table</h1>
+  <p>
+    Formula: h = √(r² + (kRe)² + 2r·kRe·sinθ) − kRe &nbsp;·&nbsp; k=4/3 &nbsp;·&nbsp; Re=6371km &nbsp;·&nbsp; Beam centerline AGL above station elevation<br>
+    Shaded columns = best radar (lowest 0.5° beam) for that station &nbsp;·&nbsp; Height colors = beam altitude category
+  </p>
+</header>
+
+<div class="toolbar">
+  <span class="leg-title">BEAM HEIGHT AGL:</span>
+  <div class="leg"><div class="li"><div class="lsw" style="background:#00ff88"></div><span style="color:#00ff88">< 6,000 ft</span></div><div class="li"><div class="lsw" style="background:#7fff00"></div><span style="color:#7fff00">6,000–9,000</span></div><div class="li"><div class="lsw" style="background:#ffd700"></div><span style="color:#ffd700">9,000–12,000</span></div><div class="li"><div class="lsw" style="background:#ff8c00"></div><span style="color:#ff8c00">12,000–18,000</span></div><div class="li"><div class="lsw" style="background:#ff4444"></div><span style="color:#ff4444">18,000–30,000</span></div><div class="li"><div class="lsw" style="background:#aa2222"></div><span style="color:#aa2222">> 30,000</span></div></div>
+  <div class="radar-legend">
+    <div class="rchip" style="color:var(--KCCX);border-color:var(--KCCX)">KCCX · State College PA · 2,486ft</div>
+    <div class="rchip" style="color:var(--KLWX);border-color:var(--KLWX)">KLWX · Sterling VA · 282ft</div>
+    <div class="rchip" style="color:var(--KDIX);border-color:var(--KDIX)">KDIX · Mt Holly NJ · 149ft</div>
+    <div class="rchip" style="color:var(--KBGM);border-color:var(--KBGM)">KBGM · Binghamton NY · 1,606ft</div>
+  </div>
+</div>
+
+<div class="tbl-outer">
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr class="header-r1"><th rowspan="3" class="th-sid">SID</th><th rowspan="3" class="th-name">Station</th><th rowspan="3" class="th-coord">Lat</th><th rowspan="3" class="th-coord">Lon</th><th rowspan="3" class="th-elev">Elev<br>(ft MSL)</th><th colspan="5" class="th-radar" style="background:#1a3a6a;color:#3b9eff;border-bottom:2px solid #3b9eff">KCCX<span class="radar-loc">State College PA</span></th><th colspan="5" class="th-radar" style="background:#3a2000;color:#fb923c;border-bottom:2px solid #fb923c">KLWX<span class="radar-loc">Sterling VA</span></th><th colspan="5" class="th-radar" style="background:#0d2a10;color:#4ade80;border-bottom:2px solid #4ade80">KDIX<span class="radar-loc">Mt Holly NJ</span></th><th colspan="5" class="th-radar" style="background:#2a2200;color:#facc15;border-bottom:2px solid #facc15">KBGM<span class="radar-loc">Binghamton NY</span></th></tr><tr class="header-r2"><th class="th-dist" style="color:#90c4ff">Dist<br>(mi)</th><th class="th-tilt" style="color:#90c4ff">0.5°</th><th class="th-tilt" style="color:#90c4ff">0.8°</th><th class="th-tilt" style="color:#90c4ff">1.2°</th><th class="th-tilt" style="color:#90c4ff">1.7°</th><th class="th-dist" style="color:#fdb97c">Dist<br>(mi)</th><th class="th-tilt" style="color:#fdb97c">0.5°</th><th class="th-tilt" style="color:#fdb97c">0.8°</th><th class="th-tilt" style="color:#fdb97c">1.2°</th><th class="th-tilt" style="color:#fdb97c">1.7°</th><th class="th-dist" style="color:#86efac">Dist<br>(mi)</th><th class="th-tilt" style="color:#86efac">0.5°</th><th class="th-tilt" style="color:#86efac">0.8°</th><th class="th-tilt" style="color:#86efac">1.2°</th><th class="th-tilt" style="color:#86efac">1.7°</th><th class="th-dist" style="color:#fde68a">Dist<br>(mi)</th><th class="th-tilt" style="color:#fde68a">0.5°</th><th class="th-tilt" style="color:#fde68a">0.8°</th><th class="th-tilt" style="color:#fde68a">1.2°</th><th class="th-tilt" style="color:#fde68a">1.7°</th></tr><tr class="header-r3"><th class="th-unit">—</th><th class="th-unit">ft AGL</th><th class="th-unit">ft AGL</th><th class="th-unit">ft AGL</th><th class="th-unit">ft AGL</th><th class="th-unit">—</th><th class="th-unit">ft AGL</th><th class="th-unit">ft AGL</th><th class="th-unit">ft AGL</th><th class="th-unit">ft AGL</th><th class="th-unit">—</th><th class="th-unit">ft AGL</th><th class="th-unit">ft AGL</th><th class="th-unit">ft AGL</th><th class="th-unit">ft AGL</th><th class="th-unit">—</th><th class="th-unit">ft AGL</th><th class="th-unit">ft AGL</th><th class="th-unit">ft AGL</th><th class="th-unit">ft AGL</th></tr></thead><tbody><tr class="data-row" data-sid="CXY"><td class="td-sid">CXY</td><td class="td-name">Capital City Airport</td><td class="td-coord">40.2171°</td><td class="td-coord">-76.8514°</td><td class="td-elev">347</td><td class="td-dist" >77.7</td><td class="td-beam h1" >8,738</td><td class="td-beam h2" >10,885</td><td class="td-beam h3" >13,748</td><td class="td-beam h3" >17,325</td><td class="td-dist td-best-dist" style="background:#3a2000;color:#fb923c;font-weight:700">92.1</td><td class="td-beam h1 td-best" style="background:#3a2000;border-left:2px solid #fb923c;border-right:none">8,413</td><td class="td-beam h2 td-best" style="background:#3a2000;border-left:none;border-right:none">10,957</td><td class="td-beam h3 td-best" style="background:#3a2000;border-left:none;border-right:none">14,348</td><td class="td-beam h4 td-best" style="background:#3a2000;border-left:none;border-right:2px solid #fb923c">18,586</td><td class="td-dist" >130.4</td><td class="td-beam h3" >14,304</td><td class="td-beam h3" >17,906</td><td class="td-beam h4" >22,707</td><td class="td-beam h4" >28,706</td><td class="td-dist" >144.2</td><td class="td-beam h4" >18,297</td><td class="td-beam h4" >22,281</td><td class="td-beam h4" >27,590</td><td class="td-beam h5" >34,225</td></tr><tr class="data-row" data-sid="MDT"><td class="td-sid">MDT</td><td class="td-name">Harrisburg Intl</td><td class="td-coord">40.1932°</td><td class="td-coord">-76.7626°</td><td class="td-elev">310</td><td class="td-dist" >82.4</td><td class="td-beam h2" >9,366</td><td class="td-beam h2" >11,643</td><td class="td-beam h3" >14,679</td><td class="td-beam h4" >18,472</td><td class="td-dist td-best-dist" style="background:#3a2000;color:#fb923c;font-weight:700">92.4</td><td class="td-beam h1 td-best" style="background:#3a2000;border-left:2px solid #fb923c;border-right:none">8,493</td><td class="td-beam h2 td-best" style="background:#3a2000;border-left:none;border-right:none">11,046</td><td class="td-beam h3 td-best" style="background:#3a2000;border-left:none;border-right:none">14,449</td><td class="td-beam h4 td-best" style="background:#3a2000;border-left:none;border-right:2px solid #fb923c">18,700</td><td class="td-dist" >125.5</td><td class="td-beam h3" >13,496</td><td class="td-beam h3" >16,964</td><td class="td-beam h4" >21,586</td><td class="td-beam h4" >27,362</td><td class="td-dist" >144.4</td><td class="td-beam h4" >18,375</td><td class="td-beam h4" >22,364</td><td class="td-beam h4" >27,682</td><td class="td-beam h5" >34,326</td></tr><tr class="data-row" data-sid="LNS"><td class="td-sid">LNS</td><td class="td-name">Lancaster Airport</td><td class="td-coord">40.1217°</td><td class="td-coord">-76.2960°</td><td class="td-elev">403</td><td class="td-dist" >105.4</td><td class="td-beam h3" >12,495</td><td class="td-beam h3" >15,407</td><td class="td-beam h4" >19,290</td><td class="td-beam h4" >24,142</td><td class="td-dist" >101.2</td><td class="td-beam h2" >9,660</td><td class="td-beam h3" >12,456</td><td class="td-beam h3" >16,183</td><td class="td-beam h4" >20,841</td><td class="td-dist td-best-dist" style="background:#0d2a10;color:#4ade80;font-weight:700">100.5</td><td class="td-beam h2 td-best" style="background:#0d2a10;border-left:2px solid #4ade80;border-right:none">9,420</td><td class="td-beam h3 td-best" style="background:#0d2a10;border-left:none;border-right:none">12,196</td><td class="td-beam h3 td-best" style="background:#0d2a10;border-left:none;border-right:none">15,897</td><td class="td-beam h4 td-best" style="background:#0d2a10;border-left:none;border-right:2px solid #4ade80">20,521</td><td class="td-dist" >144.5</td><td class="td-beam h4" >18,296</td><td class="td-beam h4" >22,288</td><td class="td-beam h4" >27,608</td><td class="td-beam h5" >34,256</td></tr><tr class="data-row" data-sid="THV"><td class="td-sid">THV</td><td class="td-name">York Airport</td><td class="td-coord">39.9170°</td><td class="td-coord">-76.8730°</td><td class="td-elev">392</td><td class="td-dist" >91.5</td><td class="td-beam h2" >10,495</td><td class="td-beam h3" >13,023</td><td class="td-beam h3" >16,393</td><td class="td-beam h4" >20,605</td><td class="td-dist td-best-dist" style="background:#3a2000;color:#fb923c;font-weight:700">72.6</td><td class="td-beam h0 td-best" style="background:#3a2000;border-left:2px solid #fb923c;border-right:none">5,874</td><td class="td-beam h1 td-best" style="background:#3a2000;border-left:none;border-right:none">7,881</td><td class="td-beam h2 td-best" style="background:#3a2000;border-left:none;border-right:none">10,557</td><td class="td-beam h3 td-best" style="background:#3a2000;border-left:none;border-right:2px solid #fb923c">13,901</td><td class="td-dist" >130.5</td><td class="td-beam h3" >14,277</td><td class="td-beam h3" >17,882</td><td class="td-beam h4" >22,687</td><td class="td-beam h4" >28,690</td><td class="td-dist" >164.4</td><td class="td-beam h4" >22,291</td><td class="td-beam h4" >26,831</td><td class="td-beam h5" >32,882</td><td class="td-beam h5" >40,443</td></tr><tr class="data-row" data-sid="RDG"><td class="td-sid">RDG</td><td class="td-name">Reading Airport</td><td class="td-coord">40.3786°</td><td class="td-coord">-75.9653°</td><td class="td-elev">344</td><td class="td-dist" >113.3</td><td class="td-beam h3" >13,778</td><td class="td-beam h3" >16,908</td><td class="td-beam h4" >21,080</td><td class="td-beam h4" >26,294</td><td class="td-dist" >126.0</td><td class="td-beam h3" >13,676</td><td class="td-beam h3" >17,156</td><td class="td-beam h4" >21,796</td><td class="td-beam h4" >27,593</td><td class="td-dist td-best-dist" style="background:#0d2a10;color:#4ade80;font-weight:700">87.3</td><td class="td-beam h1 td-best" style="background:#0d2a10;border-left:2px solid #4ade80;border-right:none">7,642</td><td class="td-beam h2 td-best" style="background:#0d2a10;border-left:none;border-right:none">10,055</td><td class="td-beam h3 td-best" style="background:#0d2a10;border-left:none;border-right:none">13,272</td><td class="td-beam h3 td-best" style="background:#0d2a10;border-left:none;border-right:2px solid #4ade80">17,292</td><td class="td-dist" >125.8</td><td class="td-beam h3" >14,975</td><td class="td-beam h4" >18,452</td><td class="td-beam h4" >23,086</td><td class="td-beam h4" >28,877</td></tr><tr class="data-row" data-sid="SEG"><td class="td-sid">SEG</td><td class="td-name">Selinsgrove Airport</td><td class="td-coord">40.8206°</td><td class="td-coord">-76.8639°</td><td class="td-elev">440</td><td class="td-dist td-best-dist" style="background:#1a3a6a;color:#3b9eff;font-weight:700">60.0</td><td class="td-beam h1 td-best" style="background:#1a3a6a;border-left:2px solid #3b9eff;border-right:none">6,608</td><td class="td-beam h1 td-best" style="background:#1a3a6a;border-left:none;border-right:none">8,265</td><td class="td-beam h2 td-best" style="background:#1a3a6a;border-left:none;border-right:none">10,475</td><td class="td-beam h3 td-best" style="background:#1a3a6a;border-left:none;border-right:2px solid #3b9eff">13,236</td><td class="td-dist" >131.6</td><td class="td-beam h3" >14,561</td><td class="td-beam h4" >18,196</td><td class="td-beam h4" >23,042</td><td class="td-beam h4" >29,098</td><td class="td-dist" >142.5</td><td class="td-beam h3" >16,428</td><td class="td-beam h4" >20,365</td><td class="td-beam h4" >25,613</td><td class="td-beam h5" >32,170</td><td class="td-dist" >105.6</td><td class="td-beam h2" >11,604</td><td class="td-beam h3" >14,521</td><td class="td-beam h4" >18,411</td><td class="td-beam h4" >23,270</td></tr><tr class="data-row" data-sid="HZL"><td class="td-sid">HZL</td><td class="td-name">Hazleton Airport</td><td class="td-coord">40.9868°</td><td class="td-coord">-75.9949°</td><td class="td-elev">1,550</td><td class="td-dist" >104.9</td><td class="td-beam h2" >11,273</td><td class="td-beam h3" >14,172</td><td class="td-beam h4" >18,037</td><td class="td-beam h4" >22,866</td><td class="td-dist" >159.6</td><td class="td-beam h4" >18,822</td><td class="td-beam h4" >23,231</td><td class="td-beam h4" >29,108</td><td class="td-beam h5" >36,451</td><td class="td-dist" >110.0</td><td class="td-beam h2" >9,712</td><td class="td-beam h3" >12,751</td><td class="td-beam h3" >16,802</td><td class="td-beam h4" >21,863</td><td class="td-dist td-best-dist" style="background:#2a2200;color:#facc15;font-weight:700">83.8</td><td class="td-beam h1 td-best" style="background:#2a2200;border-left:2px solid #facc15;border-right:none">7,429</td><td class="td-beam h2 td-best" style="background:#2a2200;border-left:none;border-right:none">9,745</td><td class="td-beam h3 td-best" style="background:#2a2200;border-left:none;border-right:none">12,833</td><td class="td-beam h3 td-best" style="background:#2a2200;border-left:none;border-right:2px solid #facc15">16,691</td></tr><tr class="data-row" data-sid="ZER"><td class="td-sid">ZER</td><td class="td-name">Schuylkill Co. Airport</td><td class="td-coord">40.7065°</td><td class="td-coord">-76.3731°</td><td class="td-elev">1,640</td><td class="td-dist td-best-dist" style="background:#1a3a6a;color:#3b9eff;font-weight:700">86.6</td><td class="td-beam h1 td-best" style="background:#1a3a6a;border-left:2px solid #3b9eff;border-right:none">8,582</td><td class="td-beam h2 td-best" style="background:#1a3a6a;border-left:none;border-right:none">10,975</td><td class="td-beam h3 td-best" style="background:#1a3a6a;border-left:none;border-right:none">14,164</td><td class="td-beam h4 td-best" style="background:#1a3a6a;border-left:none;border-right:2px solid #3b9eff">18,149</td><td class="td-dist" >133.2</td><td class="td-beam h3" >13,649</td><td class="td-beam h3" >17,329</td><td class="td-beam h4" >22,234</td><td class="td-beam h4" >28,363</td><td class="td-dist" >115.9</td><td class="td-beam h2" >10,567</td><td class="td-beam h3" >13,770</td><td class="td-beam h4" >18,040</td><td class="td-beam h4" >23,375</td><td class="td-dist" >105.1</td><td class="td-beam h2" >10,333</td><td class="td-beam h3" >13,237</td><td class="td-beam h3" >17,109</td><td class="td-beam h4" >21,947</td></tr><tr class="data-row" data-sid="MUI"><td class="td-sid">MUI</td><td class="td-name">Ft. Indiantown Gap</td><td class="td-coord">40.4348°</td><td class="td-coord">-76.5689°</td><td class="td-elev">489</td><td class="td-dist td-best-dist" style="background:#1a3a6a;color:#3b9eff;font-weight:700">82.4</td><td class="td-beam h2 td-best" style="background:#1a3a6a;border-left:2px solid #3b9eff;border-right:none">9,189</td><td class="td-beam h2 td-best" style="background:#1a3a6a;border-left:none;border-right:none">11,467</td><td class="td-beam h3 td-best" style="background:#1a3a6a;border-left:none;border-right:none">14,503</td><td class="td-beam h4 td-best" style="background:#1a3a6a;border-left:none;border-right:2px solid #3b9eff">18,297</td><td class="td-dist" >111.8</td><td class="td-beam h2" >11,196</td><td class="td-beam h3" >14,286</td><td class="td-beam h4" >18,404</td><td class="td-beam h4" >23,551</td><td class="td-dist" >118.8</td><td class="td-beam h3" >12,187</td><td class="td-beam h3" >15,469</td><td class="td-beam h4" >19,844</td><td class="td-beam h4" >25,310</td><td class="td-dist" >125.7</td><td class="td-beam h3" >14,800</td><td class="td-beam h4" >18,271</td><td class="td-beam h4" >22,899</td><td class="td-beam h4" >28,681</td></tr><tr class="data-row" data-sid="N79"><td class="td-sid">N79</td><td class="td-name">New Garden Airport</td><td class="td-coord">39.8369°</td><td class="td-coord">-75.7278°</td><td class="td-elev">420</td><td class="td-dist" >141.4</td><td class="td-beam h4" >18,567</td><td class="td-beam h4" >22,472</td><td class="td-beam h4" >27,677</td><td class="td-beam h5" >34,182</td><td class="td-dist" >110.8</td><td class="td-beam h2" >11,102</td><td class="td-beam h3" >14,163</td><td class="td-beam h4" >18,243</td><td class="td-beam h4" >23,342</td><td class="td-dist td-best-dist" style="background:#0d2a10;color:#4ade80;font-weight:700">70.2</td><td class="td-beam h0 td-best" style="background:#0d2a10;border-left:2px solid #4ade80;border-right:none">5,431</td><td class="td-beam h1 td-best" style="background:#0d2a10;border-left:none;border-right:none">7,372</td><td class="td-beam h2 td-best" style="background:#0d2a10;border-left:none;border-right:none">9,960</td><td class="td-beam h3 td-best" style="background:#0d2a10;border-left:none;border-right:2px solid #4ade80">13,193</td><td class="td-dist" >163.8</td><td class="td-beam h4" >22,145</td><td class="td-beam h4" >26,670</td><td class="td-beam h5" >32,701</td><td class="td-beam h5" >40,236</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<footer>
+  Radars: KCCX (40.9232°N 78.0037°W elev 2,486ft MSL) · KLWX (38.9753°N 77.4778°W elev 282ft MSL) · KDIX (39.9471°N 74.4108°W elev 149ft MSL) · KBGM (42.1997°N 75.9850°W elev 1,606ft MSL)<br>
+  Tilts shown: 0.5° (lowest) · 0.8° · 1.2° · 1.7° — all VCP212 standard tilts · Station elevations from IEM ASOS metadata<br>
+  Highlighted columns = best radar per station based on minimum 0.5° beam centerline height AGL
+</footer>
+
+</body>
+</html>

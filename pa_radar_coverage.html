@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PA NEXRAD Beam Height Coverage</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@300;400;600;700&display=swap');
+
+  :root {
+    --bg: #0a0d14;
+    --panel: #111827;
+    --border: #1e2d40;
+    --accent: #00d4ff;
+    --dim: #4a6070;
+    --KCCX: #2196F3;
+    --KDIX: #4CAF50;
+    --KLWX: #FF9800;
+    --KPBZ: #9C27B0;
+    --KDOX: #F44336;
+    --KBUF: #00BCD4;
+    --KBGM: #FFEB3B;
+    --KCLE: #FF5722;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: #c8d8e8;
+    font-family: 'Barlow Condensed', sans-serif;
+    min-height: 100vh;
+  }
+
+  header {
+    background: linear-gradient(135deg, #0a0d14 0%, #0d1a2e 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  header p {
+    font-size: 13px;
+    color: var(--dim);
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  .radar-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 4px;
+    box-shadow: 0 0 6px currentColor;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 12px 24px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 0;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+  }
+
+  .tab {
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    color: var(--dim);
+    transition: all 0.2s;
+  }
+
+  .tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  .tab:hover { color: #8ac8e0; }
+
+  .content { padding: 20px 24px; }
+
+  /* MAP */
+  #map-view { display: block; }
+  #table-view { display: none; }
+
+  svg#pamap {
+    width: 100%;
+    max-width: 900px;
+    display: block;
+    margin: 0 auto;
+    background: #080c14;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+  }
+
+  .county-path {
+    stroke: #1a2a3a;
+    stroke-width: 0.5;
+    cursor: pointer;
+    transition: opacity 0.15s, stroke 0.15s;
+  }
+
+  .county-path:hover {
+    opacity: 0.7;
+    stroke: #fff;
+    stroke-width: 1;
+  }
+
+  .county-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 4.5px;
+    fill: rgba(255,255,255,0.55);
+    pointer-events: none;
+    text-anchor: middle;
+    dominant-baseline: middle;
+  }
+
+  /* TOOLTIP */
+  #tooltip {
+    position: fixed;
+    background: rgba(10,13,20,0.97);
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    padding: 12px 16px;
+    font-size: 12px;
+    display: none;
+    z-index: 100;
+    min-width: 260px;
+    box-shadow: 0 0 20px rgba(0,212,255,0.2);
+    pointer-events: none;
+  }
+
+  #tooltip h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+  }
+
+  .tt-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 2px 0;
+    border-bottom: 1px solid #1a2535;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  .tt-row:last-child { border-bottom: none; }
+  .tt-best { font-weight: 700; }
+
+  /* TABLE */
+  .table-wrap {
+    overflow-x: auto;
+    max-height: 70vh;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+  }
+
+  thead th {
+    background: #0d1a2e;
+    color: var(--accent);
+    padding: 10px 12px;
+    text-align: right;
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    letter-spacing: 1px;
+    font-size: 11px;
+    border-bottom: 2px solid var(--border);
+  }
+
+  thead th:first-child { text-align: left; }
+
+  tbody tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+  tbody tr:hover { background: rgba(0,212,255,0.05); }
+
+  td {
+    padding: 7px 12px;
+    text-align: right;
+    border-bottom: 1px solid #111a24;
+    color: #8aa8c0;
+  }
+
+  td:first-child {
+    text-align: left;
+    color: #c8d8e8;
+    font-weight: 600;
+  }
+
+  .best-cell {
+    font-weight: 700;
+    color: #fff !important;
+  }
+
+  .cell-min { color: #00ff88 !important; font-weight: 700; }
+  .cell-low { color: #7fff00 !important; }
+  .cell-mid { color: #ffd700 !important; }
+  .cell-high { color: #ff6b35 !important; }
+  .cell-bad { color: #ff2244 !important; }
+
+  .note {
+    font-size: 11px;
+    color: var(--dim);
+    margin-top: 12px;
+    font-family: 'Share Tech Mono', monospace;
+    line-height: 1.6;
+  }
+
+  .radar-info-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+    font-size: 12px;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  .radar-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 4px 10px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>PA NEXRAD Beam Coverage Analysis</h1>
+    <p>0.5° tilt · 5-point county integration · 4/3 Earth radius model · 8 WSR-88D sites</p>
+  </div>
+</header>
+
+<div class="legend">
+  <div class="legend-item"><span class="radar-dot" style="background:var(--KCCX);color:var(--KCCX)"></span>KCCX State College</div>
+  <div class="legend-item"><span class="radar-dot" style="background:var(--KDIX);color:var(--KDIX)"></span>KDIX Mt Holly NJ</div>
+  <div class="legend-item"><span class="radar-dot" style="background:var(--KLWX);color:var(--KLWX)"></span>KLWX Sterling VA</div>
+  <div class="legend-item"><span class="radar-dot" style="background:var(--KPBZ);color:var(--KPBZ)"></span>KPBZ Pittsburgh</div>
+  <div class="legend-item"><span class="radar-dot" style="background:var(--KDOX);color:var(--KDOX)"></span>KDOX Dover DE</div>
+  <div class="legend-item"><span class="radar-dot" style="background:var(--KBUF);color:var(--KBUF)"></span>KBUF Buffalo</div>
+  <div class="legend-item"><span class="radar-dot" style="background:var(--KBGM);color:var(--KBGM)"></span>KBGM Binghamton</div>
+  <div class="legend-item"><span class="radar-dot" style="background:var(--KCLE);color:var(--KCLE)"></span>KCLE Cleveland</div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('map')">MAP VIEW</div>
+  <div class="tab" onclick="showTab('table')">DATA TABLE</div>
+</div>
+
+<div class="content">
+  <div id="map-view">
+    <svg id="pamap" viewBox="0 0 900 520" xmlns="http://www.w3.org/2000/svg"></svg>
+    <p class="note">▲ Hover any county for full beam height breakdown. Color = radar with lowest 0.5° beam centerline AGL at county centroid (equal-weight 5-point integration). Height = ft AGL at county mean elevation.</p>
+  </div>
+
+  <div id="table-view">
+    <p class="note" style="margin-bottom:12px">All values = county-average 0.5° beam centerline height (ft AGL). Cell color: <span style="color:#00ff88">■ &lt;5k</span> <span style="color:#7fff00">■ 5–10k</span> <span style="color:#ffd700">■ 10–20k</span> <span style="color:#ff6b35">■ 20–40k</span> <span style="color:#ff2244">■ &gt;40k</span> ft. Bold = county best radar.</p>
+    <div class="table-wrap">
+      <table id="data-table">
+        <thead>
+          <tr>
+            <th>County</th>
+            <th>Best Radar</th>
+            <th style="color:var(--KCCX)">KCCX</th>
+            <th style="color:var(--KDIX)">KDIX</th>
+            <th style="color:var(--KLWX)">KLWX</th>
+            <th style="color:var(--KPBZ)">KPBZ</th>
+            <th style="color:var(--KDOX)">KDOX</th>
+            <th style="color:var(--KBUF)">KBUF</th>
+            <th style="color:var(--KBGM)">KBGM</th>
+            <th style="color:var(--KCLE)">KCLE</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div id="tooltip"></div>
+
+<script>
+const RADAR_COLORS = {
+  KCCX:'#2196F3', KDIX:'#4CAF50', KLWX:'#FF9800',
+  KPBZ:'#9C27B0', KDOX:'#F44336', KBUF:'#00BCD4',
+  KBGM:'#FFEB3B', KCLE:'#FF5722'
+};
+
+const RADARS = {
+  KCCX:{lat:40.923167,lon:-78.003722,elev:2486,loc:'State College PA'},
+  KDIX:{lat:39.9471,lon:-74.4108,elev:149,loc:'Mt Holly NJ'},
+  KLWX:{lat:38.9753,lon:-77.4778,elev:282,loc:'Sterling VA'},
+  KPBZ:{lat:40.5317,lon:-80.2179,elev:1213,loc:'Pittsburgh PA'},
+  KDOX:{lat:38.8257,lon:-75.44,elev:50,loc:'Dover DE'},
+  KBUF:{lat:42.9489,lon:-78.7367,elev:693,loc:'Buffalo NY'},
+  KBGM:{lat:42.1997,lon:-75.985,elev:1606,loc:'Binghamton NY'},
+  KCLE:{lat:41.4132,lon:-81.8597,elev:763,loc:'Cleveland OH'}
+};
+
+const DATA = [{"county":"Adams","best":"KLWX","bestH":4680,"KCCX":9241,"KDIX":17499,"KLWX":4680,"KPBZ":21792,"KDOX":12115,"KBUF":36195,"KBGM":23961,"KCLE":47652},{"county":"Allegheny","best":"KPBZ","bestH":1128,"KCCX":12550,"KDIX":56628,"KLWX":21074,"KPBZ":1128,"KDOX":46799,"KBUF":25415,"KBGM":40658,"KCLE":12451},{"county":"Armstrong","best":"KPBZ","bestH":3119,"KCCX":7935,"KDIX":48837,"KLWX":20422,"KPBZ":3119,"KDOX":42917,"KBUF":18281,"KBGM":30803,"KCLE":14344},{"county":"Beaver","best":"KPBZ","bestH":1073,"KCCX":14978,"KDIX":64070,"KLWX":26925,"KPBZ":1073,"KDOX":54824,"KBUF":23594,"KBGM":43167,"KCLE":8533},{"county":"Bedford","best":"KCCX","bestH":6578,"KCCX":6578,"KDIX":32047,"KLWX":7057,"KPBZ":9159,"KDOX":23668,"KBUF":29387,"KBGM":29376,"KCLE":28930},{"county":"Berks","best":"KDIX","bestH":7358,"KCCX":13864,"KDIX":7358,"KLWX":14201,"KPBZ":36679,"KDOX":11188,"KBUF":36499,"KBGM":14373,"KCLE":65283},{"county":"Blair","best":"KCCX","bestH":3355,"KCCX":3355,"KDIX":30640,"KLWX":10439,"KPBZ":9097,"KDOX":25855,"KBUF":22031,"KBGM":22690,"KCLE":27140},{"county":"Bradford","best":"KBGM","bestH":3028,"KCCX":10625,"KDIX":20656,"KLWX":28443,"KPBZ":32207,"KDOX":31013,"KBUF":15746,"KBGM":3028,"KCLE":51025},{"county":"Bucks","best":"KDIX","bestH":2977,"KCCX":21911,"KDIX":2977,"KLWX":19640,"KPBZ":49641,"KDOX":10212,"KBUF":46399,"KBGM":17055,"KCLE":82152},{"county":"Butler","best":"KPBZ","bestH":1857,"KCCX":10902,"KDIX":56331,"KLWX":24346,"KPBZ":1857,"KDOX":49478,"KBUF":19024,"KBGM":35560,"KCLE":10643},{"county":"Cambria","best":"KCCX","bestH":4090,"KCCX":4090,"KDIX":35520,"KLWX":11870,"KPBZ":6176,"KDOX":29724,"KBUF":21181,"KBGM":25373,"KCLE":22543},{"county":"Cameron","best":"KCCX","bestH":3079,"KCCX":3079,"KDIX":33605,"KLWX":21628,"KPBZ":12540,"KDOX":35747,"KBUF":9809,"KBGM":13554,"KCLE":25697},{"county":"Carbon","best":"KDIX","bestH":7941,"KCCX":14092,"KDIX":7941,"KLWX":20130,"KPBZ":39328,"KDOX":16143,"KBUF":31179,"KBGM":8589,"KCLE":66253},{"county":"Centre","best":"KCCX","bestH":1577,"KCCX":1577,"KDIX":25824,"KLWX":14253,"KPBZ":13902,"KDOX":25850,"KBUF":16972,"KBGM":14521,"KCLE":31740},{"county":"Chester","best":"KDIX","bestH":5633,"KCCX":17469,"KDIX":5633,"KLWX":11751,"KPBZ":40180,"KDOX":6687,"KBUF":45193,"KBGM":20290,"KCLE":71739},{"county":"Clarion","best":"KPBZ","bestH":4775,"KCCX":7495,"KDIX":49500,"KLWX":24339,"KPBZ":4775,"KDOX":46282,"KBUF":13203,"KBGM":27011,"KCLE":13688},{"county":"Clearfield","best":"KCCX","bestH":2290,"KCCX":2290,"KDIX":33946,"KLWX":16654,"KPBZ":9037,"KDOX":32463,"KBUF":14550,"KBGM":18495,"KCLE":23688},{"county":"Clinton","best":"KCCX","bestH":2889,"KCCX":2889,"KDIX":25935,"KLWX":18412,"KPBZ":16707,"KDOX":28726,"KBUF":13901,"KBGM":11059,"KCLE":33517},{"county":"Columbia","best":"KBGM","bestH":8139,"KCCX":8990,"KDIX":13784,"KLWX":18315,"KPBZ":30081,"KDOX":19774,"KBUF":23873,"KBGM":8139,"KCLE":53303},{"county":"Crawford","best":"KPBZ","bestH":6888,"KCCX":14089,"KDIX":64907,"KLWX":36709,"KPBZ":6888,"KDOX":62800,"KBUF":10903,"KBGM":33179,"KCLE":8255},{"county":"Cumberland","best":"KCCX","bestH":7235,"KCCX":7235,"KDIX":17533,"KLWX":7377,"KPBZ":21042,"KDOX":14553,"KBUF":31049,"KBGM":19799,"KCLE":45409},{"county":"Dauphin","best":"KCCX","bestH":8029,"KCCX":8029,"KDIX":14050,"KLWX":10267,"KPBZ":25314,"KDOX":14188,"KBUF":29957,"KBGM":15670,"KCLE":50293},{"county":"Delaware","best":"KDIX","bestH":3661,"KCCX":21343,"KDIX":3661,"KLWX":14465,"KPBZ":46375,"KDOX":6226,"KBUF":50015,"KBGM":21726,"KCLE":79783},{"county":"Elk","best":"KCCX","bestH":4142,"KCCX":4142,"KDIX":39529,"KLWX":23121,"KPBZ":9447,"KDOX":40209,"KBUF":9283,"KBGM":17446,"KCLE":20478},{"county":"Erie","best":"KBUF","bestH":7969,"KCCX":17123,"KDIX":69538,"KLWX":44225,"KPBZ":11456,"KDOX":70229,"KBUF":7969,"KBGM":32527,"KCLE":10014},{"county":"Fayette","best":"KPBZ","bestH":3613,"KCCX":12317,"KDIX":49875,"KLWX":13805,"KPBZ":3613,"KDOX":37582,"KBUF":32185,"KBGM":42123,"KCLE":18643},{"county":"Forest","best":"KPBZ","bestH":7193,"KCCX":7463,"KDIX":49250,"KLWX":27652,"KPBZ":7193,"KDOX":48569,"KBUF":9251,"KBGM":23428,"KCLE":14678},{"county":"Franklin","best":"KLWX","bestH":4902,"KCCX":7605,"KDIX":22922,"KLWX":4902,"KPBZ":16494,"KDOX":16258,"KBUF":33239,"KBGM":25787,"KCLE":39989},{"county":"Fulton","best":"KLWX","bestH":5278,"KCCX":6867,"KDIX":27201,"KLWX":5278,"KPBZ":12560,"KDOX":19407,"KBUF":31519,"KBGM":27694,"KCLE":34340},{"county":"Greene","best":"KPBZ","bestH":3173,"KCCX":17066,"KDIX":60418,"KLWX":18898,"KPBZ":3173,"KDOX":46132,"KBUF":35587,"KBGM":50320,"KCLE":15283},{"county":"Huntingdon","best":"KCCX","bestH":3188,"KCCX":3188,"KDIX":25787,"KLWX":9016,"KPBZ":12114,"KDOX":21907,"KBUF":23344,"KBGM":20349,"KCLE":31939},{"county":"Indiana","best":"KPBZ","bestH":4170,"KCCX":5524,"KDIX":41638,"KLWX":15490,"KPBZ":4170,"KDOX":35660,"KBUF":19552,"KBGM":27788,"KCLE":18181},{"county":"Jefferson","best":"KCCX","bestH":4957,"KCCX":4957,"KDIX":42741,"KLWX":20929,"KPBZ":6128,"KDOX":40354,"KBUF":13037,"KBGM":22908,"KCLE":17410},{"county":"Juniata","best":"KCCX","bestH":4450,"KCCX":4450,"KDIX":20326,"KLWX":10243,"KPBZ":18006,"KDOX":19032,"KBUF":24499,"KBGM":16585,"KCLE":39684},{"county":"Lackawanna","best":"KBGM","bestH":4836,"KCCX":15749,"KDIX":11987,"KLWX":27517,"KPBZ":42310,"KDOX":23613,"KBUF":26746,"KBGM":4836,"KCLE":66854},{"county":"Lancaster","best":"KDOX","bestH":8523,"KCCX":13252,"KDIX":9114,"KLWX":9251,"KPBZ":32901,"KDOX":8523,"KBUF":39692,"KBGM":19379,"KCLE":62001},{"county":"Lawrence","best":"KPBZ","bestH":2266,"KCCX":14492,"KDIX":64806,"KLWX":29850,"KPBZ":2266,"KDOX":57561,"KBUF":19517,"KBGM":40341,"KCLE":7291},{"county":"Lebanon","best":"KCCX","bestH":10155,"KCCX":10155,"KDIX":10920,"KLWX":10864,"KPBZ":29473,"KDOX":12026,"KBUF":32947,"KBGM":15370,"KCLE":56148},{"county":"Lehigh","best":"KDIX","bestH":5818,"KCCX":17144,"KDIX":5818,"KLWX":18979,"KPBZ":43049,"KDOX":12968,"KBUF":38062,"KBGM":12798,"KCLE":72482},{"county":"Luzerne","best":"KBGM","bestH":6453,"KCCX":12146,"KDIX":11581,"KLWX":21824,"KPBZ":36128,"KDOX":20184,"KBUF":25898,"KBGM":6453,"KCLE":60532},{"county":"Lycoming","best":"KCCX","bestH":5869,"KCCX":5869,"KDIX":21335,"KLWX":20598,"KPBZ":23499,"KDOX":26853,"KBUF":16163,"KBGM":7782,"KCLE":42304},{"county":"McKean","best":"KBUF","bestH":5717,"KCCX":5918,"KDIX":41267,"KLWX":28365,"KPBZ":12691,"KDOX":44688,"KBUF":5717,"KBGM":14899,"KCLE":21948},{"county":"Mercer","best":"KPBZ","bestH":4011,"KCCX":14029,"KDIX":64813,"KLWX":32736,"KPBZ":4011,"KDOX":59828,"KBUF":15417,"KBGM":37003,"KCLE":7143},{"county":"Mifflin","best":"KCCX","bestH":3432,"KCCX":3432,"KDIX":22705,"KLWX":11039,"KPBZ":15940,"KDOX":21282,"KBUF":22436,"KBGM":16749,"KCLE":36341},{"county":"Monroe","best":"KDIX","bestH":7050,"KCCX":17218,"KDIX":7050,"KLWX":23992,"KPBZ":44875,"KDOX":17589,"KBUF":33174,"KBGM":7920,"KCLE":72634},{"county":"Montgomery","best":"KDIX","bestH":3821,"KCCX":19745,"KDIX":3821,"KLWX":16443,"KPBZ":45520,"KDOX":8778,"KBUF":45274,"KBGM":17801,"KCLE":77510},{"county":"Montour","best":"KCCX","bestH":7882,"KCCX":7882,"KDIX":15466,"KLWX":17673,"KPBZ":27746,"KDOX":20602,"KBUF":22700,"KBGM":8849,"KCLE":50165},{"county":"Northampton","best":"KDIX","bestH":5807,"KCCX":18612,"KDIX":5807,"KLWX":21779,"KPBZ":45902,"KDOX":14680,"KBUF":38115,"KBGM":11755,"KCLE":75364},{"county":"Northumberland","best":"KCCX","bestH":7449,"KCCX":7449,"KDIX":15059,"KLWX":15485,"KPBZ":26565,"KDOX":18842,"KBUF":24174,"KBGM":10480,"KCLE":49545},{"county":"Perry","best":"KCCX","bestH":5498,"KCCX":5498,"KDIX":18236,"KLWX":8789,"KPBZ":19551,"KDOX":16470,"KBUF":27171,"KBGM":17308,"KCLE":42598},{"county":"Philadelphia","best":"KDIX","bestH":2566,"KCCX":23397,"KDIX":2566,"KLWX":17165,"KPBZ":50211,"KDOX":7212,"KBUF":51477,"KBGM":21356,"KCLE":84268},{"county":"Pike","best":"KBGM","bestH":7144,"KCCX":21014,"KDIX":8605,"KLWX":30210,"KPBZ":51045,"KDOX":21981,"KBUF":34159,"KBGM":7144,"KCLE":78722},{"county":"Potter","best":"KCCX","bestH":4479,"KCCX":4479,"KDIX":31993,"KLWX":24981,"KPBZ":16633,"KDOX":36953,"KBUF":7866,"KBGM":9736,"KCLE":29668},{"county":"Schuylkill","best":"KDIX","bestH":10008,"KCCX":10418,"KDIX":10008,"KLWX":14981,"KPBZ":32089,"KDOX":14561,"KBUF":29581,"KBGM":10881,"KCLE":58013},{"county":"Snyder","best":"KCCX","bestH":5325,"KCCX":5325,"KDIX":17953,"KLWX":13322,"KPBZ":21820,"KDOX":19567,"KBUF":22955,"KBGM":12671,"KCLE":43669},{"county":"Somerset","best":"KPBZ","bestH":5194,"KCCX":7531,"KDIX":38679,"KLWX":8879,"KPBZ":5194,"KDOX":28735,"KBUF":28773,"KBGM":33355,"KCLE":22808},{"county":"Sullivan","best":"KBGM","bestH":4608,"KCCX":8614,"KDIX":16991,"KLWX":22804,"KPBZ":29767,"KDOX":25206,"KBUF":18267,"KBGM":4608,"KCLE":50421},{"county":"Susquehanna","best":"KBGM","bestH":2033,"KCCX":15653,"KDIX":16720,"KLWX":32139,"KPBZ":41619,"KDOX":29924,"KBUF":21474,"KBGM":2033,"KCLE":63274},{"county":"Tioga","best":"KBGM","bestH":6050,"KCCX":6543,"KDIX":26762,"KLWX":26313,"KPBZ":23048,"KDOX":34239,"KBUF":10290,"KBGM":6050,"KCLE":38435},{"county":"Union","best":"KCCX","bestH":5214,"KCCX":5214,"KDIX":18707,"KLWX":15561,"KPBZ":22276,"KDOX":21700,"KBUF":20546,"KBGM":10756,"KCLE":43182},{"county":"Venango","best":"KPBZ","bestH":5078,"KCCX":9962,"KDIX":55773,"KLWX":29194,"KPBZ":5078,"KDOX":52954,"KBUF":11901,"KBGM":29384,"KCLE":10918},{"county":"Warren","best":"KBUF","bestH":6280,"KCCX":9385,"KDIX":52532,"KLWX":32932,"KPBZ":9791,"KDOX":53912,"KBUF":6280,"KBGM":22508,"KCLE":14982},{"county":"Washington","best":"KPBZ","bestH":1539,"KCCX":15564,"KDIX":60947,"KLWX":21207,"KPBZ":1539,"KDOX":48597,"KBUF":30557,"KBGM":46908,"KCLE":12371},{"county":"Wayne","best":"KBGM","bestH":4162,"KCCX":19437,"KDIX":12374,"KLWX":32719,"KPBZ":48470,"KDOX":26594,"KBUF":28371,"KBGM":4162,"KCLE":73419},{"county":"Westmoreland","best":"KPBZ","bestH":2892,"KCCX":9221,"KDIX":47337,"KLWX":15455,"KPBZ":2892,"KDOX":38109,"KBUF":25437,"KBGM":35606,"KCLE":17034},{"county":"Wyoming","best":"KBGM","bestH":3780,"KCCX":12865,"KDIX":14437,"KLWX":26412,"KPBZ":37350,"KDOX":25127,"KBUF":22354,"KBGM":3780,"KCLE":59917},{"county":"York","best":"KLWX","bestH":6271,"KCCX":11109,"KDIX":12893,"KLWX":6271,"KPBZ":27253,"KDOX":9530,"KBUF":38268,"KBGM":21767,"KCLE":54960}];
+
+// PA county simplified polygons (projected to SVG viewBox 0-900 x 0-520)
+// lon range: -80.52 to -74.69 → 0-900; lat range: 39.72 to 42.27 → 0-520 (inverted)
+function proj(lon, lat) {
+  const x = (lon - (-80.52)) / ((-74.69) - (-80.52)) * 900;
+  const y = (1 - (lat - 39.72) / (42.27 - 39.72)) * 520;
+  return [x, y];
+}
+
+// Simplified county polygons [lon,lat] pairs
+const COUNTIES_POLY = {
+  "Philadelphia": [[-75.14,40.14],[-74.96,40.14],[-74.96,39.87],[-75.22,39.87],[-75.14,40.14]],
+  "Bucks": [[-75.36,40.57],[-74.70,40.57],[-74.70,40.00],[-74.96,40.00],[-75.22,40.10],[-75.36,40.57]],
+  "Montgomery": [[-75.65,40.35],[-75.14,40.35],[-75.14,40.14],[-75.22,39.95],[-75.57,39.95],[-75.65,40.35]],
+  "Delaware": [[-75.57,39.95],[-75.22,39.95],[-75.14,40.14],[-75.14,40.14],[-75.57,40.05],[-75.57,39.95]],
+  "Chester": [[-76.15,40.25],[-75.65,40.25],[-75.57,40.00],[-75.57,39.72],[-76.00,39.72],[-76.15,39.83],[-76.15,40.25]],
+  "Lancaster": [[-76.75,40.25],[-76.15,40.25],[-76.15,39.83],[-76.72,39.72],[-76.97,39.72],[-76.75,40.25]],
+  "York": [[-77.20,40.10],[-76.70,40.10],[-76.72,39.72],[-77.46,39.72],[-77.20,40.10]],
+  "Adams": [[-77.68,39.97],[-77.20,39.97],[-77.20,39.72],[-77.46,39.72],[-77.68,39.72],[-77.68,39.97]],
+  "Franklin": [[-77.90,40.18],[-77.47,40.18],[-77.47,39.72],[-77.70,39.72],[-77.90,40.18]],
+  "Fulton": [[-78.35,40.00],[-77.87,40.00],[-77.87,39.72],[-78.35,39.72],[-78.35,40.00]],
+  "Bedford": [[-78.68,40.28],[-78.05,40.28],[-78.05,39.72],[-78.68,39.72],[-78.68,40.28]],
+  "Somerset": [[-79.22,40.28],[-78.68,40.28],[-78.68,39.72],[-79.22,39.72],[-79.22,40.28]],
+  "Fayette": [[-79.92,40.00],[-79.49,40.00],[-79.49,39.72],[-79.92,39.72],[-79.92,40.00]],
+  "Greene": [[-80.52,39.97],[-79.92,39.97],[-79.92,39.72],[-80.52,39.72],[-80.52,39.97]],
+  "Washington": [[-80.52,40.48],[-80.00,40.48],[-80.00,39.97],[-80.52,39.97],[-80.52,40.48]],
+  "Allegheny": [[-80.18,40.68],[-79.70,40.68],[-79.70,40.20],[-80.18,40.20],[-80.18,40.68]],
+  "Westmoreland": [[-79.70,40.48],[-79.15,40.48],[-79.15,40.00],[-79.70,40.00],[-79.70,40.48]],
+  "Indiana": [[-79.35,40.90],[-78.80,40.90],[-78.80,40.40],[-79.35,40.40],[-79.35,40.90]],
+  "Cambria": [[-79.05,40.72],[-78.50,40.72],[-78.50,40.20],[-79.05,40.20],[-79.05,40.72]],
+  "Blair": [[-78.56,40.75],[-78.07,40.75],[-78.07,40.20],[-78.56,40.20],[-78.56,40.75]],
+  "Huntingdon": [[-78.10,40.73],[-77.68,40.73],[-77.68,40.00],[-78.10,40.00],[-78.10,40.73]],
+  "Mifflin": [[-77.68,40.85],[-77.35,40.85],[-77.35,40.47],[-77.68,40.47],[-77.68,40.85]],
+  "Juniata": [[-77.47,40.74],[-77.10,40.74],[-77.10,40.35],[-77.47,40.35],[-77.47,40.74]],
+  "Perry": [[-77.47,40.50],[-77.10,40.50],[-77.10,40.00],[-77.47,40.00],[-77.47,40.50]],
+  "Cumberland": [[-77.45,40.35],[-76.94,40.35],[-76.94,39.97],[-77.45,39.97],[-77.45,40.35]],
+  "Dauphin": [[-76.94,40.55],[-76.55,40.55],[-76.55,40.00],[-76.94,40.00],[-76.94,40.55]],
+  "Lebanon": [[-76.70,40.55],[-76.25,40.55],[-76.25,40.18],[-76.70,40.18],[-76.70,40.55]],
+  "Berks": [[-76.25,40.65],[-75.62,40.65],[-75.62,39.95],[-76.10,39.95],[-76.25,40.65]],
+  "Schuylkill": [[-76.48,40.90],[-75.97,40.90],[-75.97,40.45],[-76.48,40.45],[-76.48,40.90]],
+  "Lehigh": [[-75.80,40.78],[-75.20,40.78],[-75.20,40.38],[-75.80,40.38],[-75.80,40.78]],
+  "Northampton": [[-75.37,40.95],[-74.96,40.95],[-74.96,40.40],[-75.37,40.40],[-75.37,40.95]],
+  "Carbon": [[-75.98,41.02],[-75.44,41.02],[-75.44,40.72],[-75.98,40.72],[-75.98,41.02]],
+  "Monroe": [[-75.44,41.25],[-74.90,41.25],[-74.90,40.87],[-75.44,40.87],[-75.44,41.25]],
+  "Pike": [[-75.20,41.60],[-74.69,41.60],[-74.69,40.97],[-75.20,40.97],[-75.20,41.60]],
+  "Wayne": [[-75.47,41.85],[-74.85,41.85],[-74.85,41.28],[-75.47,41.28],[-75.47,41.85]],
+  "Susquehanna": [[-76.10,42.00],[-75.36,42.00],[-75.36,41.62],[-76.10,41.62],[-76.10,42.00]],
+  "Wyoming": [[-76.15,41.62],[-75.72,41.62],[-75.72,41.32],[-76.15,41.32],[-76.15,41.62]],
+  "Lackawanna": [[-75.78,41.62],[-75.30,41.62],[-75.30,41.28],[-75.78,41.28],[-75.78,41.62]],
+  "Luzerne": [[-76.25,41.40],[-75.70,41.40],[-75.70,40.88],[-76.25,40.88],[-76.25,41.40]],
+  "Columbia": [[-76.65,41.25],[-76.15,41.25],[-76.15,40.80],[-76.65,40.80],[-76.65,41.25]],
+  "Montour": [[-76.70,41.10],[-76.45,41.10],[-76.45,40.90],[-76.70,40.90],[-76.70,41.10]],
+  "Northumberland": [[-76.95,41.05],[-76.45,41.05],[-76.45,40.68],[-76.95,40.68],[-76.95,41.05]],
+  "Snyder": [[-77.27,40.95],[-76.90,40.95],[-76.90,40.62],[-77.27,40.62],[-77.27,40.95]],
+  "Union": [[-77.32,41.15],[-76.90,41.15],[-76.90,40.85],[-77.32,40.85],[-77.32,41.15]],
+  "Centre": [[-78.00,41.20],[-77.30,41.20],[-77.30,40.65],[-78.00,40.65],[-78.00,41.20]],
+  "Clinton": [[-77.90,41.48],[-77.27,41.48],[-77.27,41.00],[-77.90,41.00],[-77.90,41.48]],
+  "Lycoming": [[-77.60,41.72],[-76.72,41.72],[-76.72,41.22],[-77.60,41.22],[-77.60,41.72]],
+  "Sullivan": [[-76.72,41.72],[-76.35,41.72],[-76.35,41.38],[-76.72,41.38],[-76.72,41.72]],
+  "Bradford": [[-76.90,42.00],[-76.05,42.00],[-76.05,41.60],[-76.90,41.60],[-76.90,42.00]],
+  "Tioga": [[-77.60,42.00],[-76.90,42.00],[-76.90,41.55],[-77.60,41.55],[-77.60,42.00]],
+  "Potter": [[-78.06,42.00],[-77.60,42.00],[-77.60,41.47],[-78.06,41.47],[-78.06,42.00]],
+  "Cameron": [[-78.30,41.60],[-77.90,41.60],[-77.90,41.22],[-78.30,41.22],[-78.30,41.60]],
+  "Elk": [[-78.93,41.62],[-78.30,41.62],[-78.30,41.12],[-78.93,41.12],[-78.93,41.62]],
+  "Jefferson": [[-79.25,41.40],[-78.75,41.40],[-78.75,40.90],[-79.25,40.90],[-79.25,41.40]],
+  "Clearfield": [[-78.72,41.20],[-78.00,41.20],[-78.00,40.65],[-78.72,40.65],[-78.72,41.20]],
+  "Clarion": [[-79.70,41.40],[-79.12,41.40],[-79.12,41.00],[-79.70,41.00],[-79.70,41.40]],
+  "Armstrong": [[-79.70,40.88],[-79.15,40.88],[-79.15,40.55],[-79.70,40.55],[-79.70,40.88]],
+  "Forest": [[-79.48,41.65],[-79.00,41.65],[-79.00,41.20],[-79.48,41.20],[-79.48,41.65]],
+  "Venango": [[-80.00,41.53],[-79.48,41.53],[-79.48,41.00],[-80.00,41.00],[-80.00,41.53]],
+  "Lawrence": [[-80.52,41.18],[-80.00,41.18],[-80.00,40.78],[-80.52,40.78],[-80.52,41.18]],
+  "Beaver": [[-80.52,40.78],[-80.00,40.78],[-80.00,40.48],[-80.52,40.48],[-80.52,40.78]],
+  "Butler": [[-80.16,41.00],[-79.70,41.00],[-79.70,40.68],[-80.16,40.68],[-80.16,41.00]],
+  "Mercer": [[-80.52,41.50],[-80.00,41.50],[-80.00,41.18],[-80.52,41.18],[-80.52,41.50]],
+  "Crawford": [[-80.52,41.85],[-80.00,41.85],[-80.00,41.50],[-80.52,41.50],[-80.52,41.85]],
+  "Erie": [[-80.52,42.27],[-79.77,42.27],[-79.77,41.85],[-80.52,41.85],[-80.52,42.27]],
+  "Warren": [[-79.77,42.10],[-79.00,42.10],[-79.00,41.62],[-79.77,41.62],[-79.77,42.10]],
+  "McKean": [[-79.00,42.00],[-78.07,42.00],[-78.07,41.60],[-79.00,41.60],[-79.00,42.00]],
+  "Elk": [[-78.93,41.65],[-78.30,41.65],[-78.30,41.10],[-78.93,41.10],[-78.93,41.65]]
+};
+
+function fmtK(v) { return (v/1000).toFixed(1)+'k'; }
+
+function cellClass(v) {
+  if(v < 5000) return 'cell-min';
+  if(v < 10000) return 'cell-low';
+  if(v < 20000) return 'cell-mid';
+  if(v < 40000) return 'cell-high';
+  return 'cell-bad';
+}
+
+// Build table
+const tbody = document.getElementById('table-body');
+const radKeys = ['KCCX','KDIX','KLWX','KPBZ','KDOX','KBUF','KBGM','KCLE'];
+DATA.forEach(d => {
+  const tr = document.createElement('tr');
+  const bestDot = `<span class="radar-dot" style="background:${RADAR_COLORS[d.best]};color:${RADAR_COLORS[d.best]}"></span>`;
+  tr.innerHTML = `<td>${d.county}</td><td class="best-cell">${bestDot}${d.best}</td>` +
+    radKeys.map(r => {
+      const cls = cellClass(d[r]) + (r===d.best?' best-cell':'');
+      return `<td class="${cls}">${fmtK(d[r])}</td>`;
+    }).join('');
+  tbody.appendChild(tr);
+});
+
+// Build SVG map
+const svg = document.getElementById('pamap');
+const tooltip = document.getElementById('tooltip');
+const lookup = {};
+DATA.forEach(d => lookup[d.county] = d);
+
+Object.entries(COUNTIES_POLY).forEach(([name, coords]) => {
+  const d = lookup[name];
+  if(!d) return;
+  const pts = coords.map(([lon,lat]) => proj(lon,lat).join(',')).join(' ');
+  const path = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+  path.setAttribute('points', pts);
+  path.setAttribute('fill', RADAR_COLORS[d.best]);
+  path.setAttribute('fill-opacity', '0.75');
+  path.setAttribute('class', 'county-path');
+  path.setAttribute('data-county', name);
+
+  // Centroid for label
+  const cx = coords.reduce((s,[lon])=>s+lon,0)/coords.length;
+  const cy = coords.reduce((s,[,lat])=>s+lat,0)/coords.length;
+  const [lx,ly] = proj(cx,cy);
+
+  path.addEventListener('mousemove', (e) => {
+    tooltip.style.display = 'block';
+    tooltip.style.left = (e.clientX+14)+'px';
+    tooltip.style.top = (e.clientY-10)+'px';
+    const rows = radKeys.map(r => {
+      const isBest = r===d.best;
+      return `<div class="tt-row ${isBest?'tt-best':''}">
+        <span><span class="radar-dot" style="background:${RADAR_COLORS[r]};color:${RADAR_COLORS[r]}"></span>${r}</span>
+        <span class="${cellClass(d[r])}">${(d[r]/1000).toFixed(1)}k ft AGL</span>
+      </div>`;
+    }).join('');
+    tooltip.innerHTML = `<h3>${name} County</h3><div style="margin-bottom:6px;font-size:11px;color:#4a6070">Best: <span style="color:${RADAR_COLORS[d.best]}">${d.best}</span> @ ${(d.bestH/1000).toFixed(1)}k ft</div>${rows}`;
+  });
+  path.addEventListener('mouseleave', () => tooltip.style.display='none');
+
+  svg.appendChild(path);
+
+  const text = document.createElementNS('http://www.w3.org/2000/svg','text');
+  text.setAttribute('x', lx);
+  text.setAttribute('y', ly);
+  text.setAttribute('class','county-label');
+  text.textContent = name.length > 8 ? name.substring(0,7) : name;
+  svg.appendChild(text);
+});
+
+// Add radar site markers
+Object.entries(RADARS).forEach(([name, r]) => {
+  const [x,y] = proj(r.lon, r.lat);
+  const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  circle.setAttribute('cx',x); circle.setAttribute('cy',y);
+  circle.setAttribute('r',5);
+  circle.setAttribute('fill', RADAR_COLORS[name]||'#fff');
+  circle.setAttribute('stroke','#fff'); circle.setAttribute('stroke-width','1');
+  svg.appendChild(circle);
+  const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+  t.setAttribute('x',x+7); t.setAttribute('y',y+4);
+  t.setAttribute('font-size','6.5');
+  t.setAttribute('fill', RADAR_COLORS[name]||'#fff');
+  t.setAttribute('font-family','Share Tech Mono, monospace');
+  t.setAttribute('font-weight','700');
+  t.textContent = name;
+  svg.appendChild(t);
+});
+
+function showTab(tab) {
+  document.getElementById('map-view').style.display = tab==='map' ? 'block' : 'none';
+  document.getElementById('table-view').style.display = tab==='table' ? 'block' : 'none';
+  document.querySelectorAll('.tab').forEach((el,i) => {
+    el.classList.toggle('active', (i===0&&tab==='map')||(i===1&&tab==='table'));
+  });
+}
+</script>
+</body>
+</html>
